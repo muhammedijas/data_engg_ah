@@ -1,0 +1,26 @@
+DATA_LAKE_PATH:
+  BRONZE:
+    - &BRONZE_APP1    mnt/{ENV_BRONZE}/batch/{source_system}/
+  SILVER:
+    - &SILVER_PRODUCT    mnt/{ENV_SILVER}/Product/
+    - &SILVER_TRXN        mnt/{ENV_SILVER}/transaction/
+  GOLD:
+    - &GOLD_BI        mnt/{ENV_GOLD}/bi/
+
+Bronze2Silver:
+  B2SProduct:
+    source: [*BRONZE_APP1    'transactions/{YYYY/MM/DD}/ah_transactions.csv']
+    load_strategy : scd2
+    target: [*SILVER_PRODUCT 'product_info/*.delta']
+
+  B2STransaction:
+    source: [*BRONZE_APP1    'transactions/{YYYY/MM/DD}/ah_transactions.csv']
+    load_strategy : append
+    target: [*SILVER_TRXN    'transaction_data/{period=YYYYMMDD}/*.delta']
+
+Silver2Gold:
+  S2GDailyReport:
+    source: [*SILVER_PRODUCT 'product_info/*.delta']
+    trxn  : [*SILVER_TRXN    'transaction_data/{period=YYYYMMDD}/*.delta']
+    module_name : bi_daily_report
+    target: [*GOLD_BI         'daily_reports/*.delta']
